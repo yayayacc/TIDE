@@ -1,0 +1,17 @@
+res*/
+Ztest.ipynb
+test.ipynb
+__pycache__/
+logs*/
+*.pyc
+run*.sh
+data/alfworld/*/
+outputs/
+config/api_key.yaml
+run_*.sh
+test.sh
+test*.ipynb
+yh*
+*.tar.gz
+radar_fig/
+.DS_Store

@@ -1,0 +1,524 @@
+# @package _global_
+
+# Environment specific settings
+prompt:
+  webshop:
+    system_prompt: |
+      You are an AI assistant navigating an e-commerce website to find and purchase products based on user instructions. Follow these guidelines:
+
+      1. Instruction Interpretation:
+          - Analyze the user's request for product specifications, preferences, and constraints.
+          - Break down the request into searchable terms and decision criteria.
+          - Search term should not include details like size, color.
+          - Do not be too strict about the description, it's more important to buy one that is close enough within action limit.
+
+      2. Search Process:
+          - Use the search function with relevant keywords from the user's request.
+          - Analyze search results, focusing on product titles, prices, and brief descriptions.
+
+      3. Navigation and Selection:
+          - Use "click" actions to navigate to product pages or, select options, and proceed to purchase.
+          - You can click[next >] or click[< prev] to navigate through search result pages.
+          - On a product page, review all available options (e.g., scent, size, quantity).
+          - Prioritize click a product in the current page over going to next page.
+
+      4. Decision Making:
+          - Compare products against the user's criteria (e.g., size, scent, price, intended use).
+          - Use the "<{think_tag}> </{think_tag}>" to reason about which actions to take next, and the "<action> </action>" to specify your actions.
+
+      ## Constraints and Guidelines(Important):
+      - We must buy a product within {max_steps} actions. It doesn't have to match perfectly with description.
+      - Prioritize click a product in the current page over going to next page.
+      - If you have less than 3 actions left, just buy the first product you see in the current page.
+      - Almost never click[next >] for more than 2 times.Almost never click[< prev] unless you are sure the product is on one of the previous pages.
+      - If a matching option exists, make sure to click[size] then click[color], one at a time, before click[buy now], but don't have to if only 1 action left, in that case you just click[buy now]. Never click description.
+      - Once the ideal product is identified and options are selected, proceed to "Buy Now".
+      Always think through each step, considering the user's requirements and the information provided by the website. Make logical decisions and explain your reasoning.
+      Output <action>stop</action> when you have reached the target or cannot proceed further.
+    fewshot_example:
+      default_format: |
+
+        For example, User will provide a query and instruction as below:
+        "User: [User Query and Instruction]"
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        Assistant: 
+        <step>
+            <state>Instruction: [SEP]  i would like a 3 ounce bottle of bright citrus deodorant for sensitive skin, and price lower than 50.00 dollars [SEP] Search [SEP] [Available Actions]  </state>
+            <analysis> The user wants a deodorant that is: - Size: 3 ounce - Scent: bright citrus - Skin type: sensitive skin, so I should search for "3 ounce bright citrus deodorant sensitive skin" and look for products that match these criteria and are priced below $50.00.</analysis>
+            <action> search[3 ounce bright citrus deodorant sensitive skin]</action>
+        </step>
+        <step>
+            <state>[Search results with multiple products]</state>
+            <analysis> B078GWRC1J and B078GTKVXY are bright citrus deodorant less than 50 dollars. I can check B078GWRC1J first.</analysis>
+            <action>click[B078GWRC1J]</action>
+        </step>
+        <step>
+            <state>[Product page details]</state>
+            <analysis> The product B078GWRC1J has the scent "bright citrus" and size option "3 ounce (pack of 1)", which matches the user's request. The price is also below $50.00. Therefore, this product is a good fit for the user's needs.</analysis>
+            <action>click[bright citrus]</action>
+        </step>
+        <step>
+            <state>[After selecting scent]</state>
+            <analysis> The user has selected the scent "bright citrus". Now I need to select the size option "3 ounce (pack of 1)" before proceeding to purchase.</analysis>
+            <action>click[3 ounce (pack of 1)]</action>
+        </step>
+        <step>
+            <state>[After selecting size]</state>
+            <analysis> The user has selected the size "3 ounce (pack of 1)". Now I can proceed to the purchase.</analysis>
+            <action>click[Buy Now]</action>
+        </step>
+
+      user_assistant_format: |
+
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state> Instruction: [SEP]  i would like a 3 ounce bottle of bright citrus deodorant for sensitive skin, and price lower than 50.00 dollars [SEP] Search [SEP] [Available Actions]  </state>
+        Assistant: <{think_tag}> The user wants a deodorant that is: - Size: 3 ounce - Scent: bright citrus - Skin type: sensitive skin, so I should search for "3 ounce bright citrus deodorant sensitive skin" and look for products that match these criteria and are priced below $50.00.</{think_tag}>
+        <action> search[3 ounce bright citrus deodorant sensitive skin]</action>
+
+        User: <state>[Search results with multiple products]</state>
+        Assistant: <{think_tag}> B078GWRC1J and B078GTKVXY are bright citrus deodorant less than 50 dollars. I can check B078GWRC1J first.</{think_tag}>
+        <action>click[B078GWRC1J]</action>
+
+        User: <state>[Product page details]</state>
+        Assistant: <{think_tag}> The product B078GWRC1J has the scent "bright citrus" and size option "3 ounce (pack of 1)", which matches the user's request. The price is also below $50.00. Therefore, this product is a good fit for the user's needs.</{think_tag}>
+        <action>click[bright citrus]</action>
+
+        User: <state>[After selecting scent]</state>
+        Assistant: <{think_tag}> The user has selected the scent "bright citrus". Now I need to select the size option "3 ounce (pack of 1)" before proceeding to purchase.</{think_tag}>
+        <action>click[3 ounce (pack of 1)]</action>
+
+        User: <state>[After selecting size]</state>
+        Assistant: <{think_tag}> The user has selected the size "3 ounce (pack of 1)". Now I can proceed to the purchase.</{think_tag}>
+        <action>click[Buy Now]</action>
+
+      user_assistant_format_part: |
+        You only have recent part of the history with window size {history_window_size}.
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state> Instruction: [SEP]  i would like a 3 ounce bottle of bright citrus deodorant for sensitive skin, and price lower than 50.00 dollars [SEP] Search [SEP] [Available Actions]  </state>
+        Assistant: <{think_tag}> The user wants a deodorant that is: - Size: 3 ounce - Scent: bright citrus - Skin type: sensitive skin, so I should search for "3 ounce bright citrus deodorant sensitive skin" and look for products that match these criteria and are priced below $50.00.</{think_tag}>
+        <action> search[3 ounce bright citrus deodorant sensitive skin]</action>
+
+        User: <state>[Search results with multiple products]</state>
+        Assistant: <{think_tag}> B078GWRC1J and B078GTKVXY are bright citrus deodorant less than 50 dollars. I can check B078GWRC1J first.</{think_tag}>
+        <action>click[B078GWRC1J]</action>
+
+        User: <state>[Product page details]</state>
+        Assistant: <{think_tag}> The product B078GWRC1J has the scent "bright citrus" and size option "3 ounce (pack of 1)", which matches the user's request. The price is also below $50.00. Therefore, this product is a good fit for the user's needs.</{think_tag}>
+        <action>click[bright citrus]</action>
+
+        User: <state>[After selecting scent]</state>
+        Assistant: <{think_tag}> The user has selected the scent "bright citrus". Now I need to select the size option "3 ounce (pack of 1)" before proceeding to purchase.</{think_tag}>
+        <action>click[3 ounce (pack of 1)]</action>
+
+        User: <state>[After selecting size]</state>
+        Assistant: <{think_tag}> The user has selected the size "3 ounce (pack of 1)". Now I can proceed to the purchase.</{think_tag}>
+        <action>click[Buy Now]</action>
+    zeroshot_example:
+      user_assistant_format: |
+
+        Please use your knowledge about webshop and solve this task. You can not receive a feedback from the environment. You should guess what the number of the target product is and the size,color if needed.
+        For example, User will provide instruction,current state as below:
+        "User Input:[User Query and State]" 
+        You will interact with the environment step by step to fulfill the user's request.
+        If doesn't offer environment state, you can just reason based on the instruction.
+        And you should follow the format below to respond:
+        <{think_tag}>Your reasoning process</{think_tag}>
+        <action>Your action</action> 
+    
+  alfworld:
+    system_prompt: |
+      You are an AI agent interacting with the AlfWorld text-based environment to complete household tasks based on user instructions. Follow these guidelines:
+      Your goal is to complete tasks specified by natural language instructions. You will interact with this environment by taking actions step-by-step.
+      Here are some actions you can take:
+      go to (receptacle):move to a receptacle
+      open (receptacle):open a receptacle
+      close (receptacle):close a receptacle
+      take (object) from (receptacle):take an object from a receptacle
+      move (object) to (receptacle):place an object in or on a receptacle
+      examine (something):examine a receptacle or an object
+      use (object):use an object
+      heat (object) with (receptacle):heat an object using a receptacle
+      clean (object) with (receptacle):clean an object using a receptacle
+      cool (object) with (receptacle):cool an object using a receptacle
+      slice (object) with (object):slice an object using a sharp object
+      You have {max_steps} steps to complete the task.
+      You need to interact with the environment step-by-step, Use the "<{think_tag}> </{think_tag}>" to reason about which actions to take next, and the "<action> </action>" to specify your actions.
+      Output <action>stop</action> when you have reached the target or cannot proceed further.
+    fewshot_example:
+      default_format: |
+
+        For example, User will provide a query and instruction as below:
+        "User Input:
+        [User Query and Instruction]"
+
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        <step>
+            <state>Your task is to: put a clean lettuce in diningtable.
+        You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1.</state>
+            <analysis>To solve the task, I need to find and take a lettuce, then clean it with sinkbasin, then put it in diningtable. First I need to find a lettuce. A lettuce is more likely to appear in fridge (1), diningtable (1), sinkbasin (1), stoveburner (1-3), cabinet (1-13). I can check one by one, starting with fridge 1.</analysis>
+            <action>go to fridge 1</action>
+        </step>
+        <step>
+            <state>The fridge 1 is closed.</state>
+            <analysis>The fridge is closed, I need to open it to see what's inside.</analysis>
+            <action>open fridge 1</action>
+        </step>
+        <step>
+            <state>You open the fridge 1. The fridge 1 is open. In it, you see a cup 3, a egg 2, a potato 3, and a potato 2.</state>
+            <analysis>There is no lettuce in the fridge. I should check another location. I will check the diningtable.</analysis>
+            <action>go to diningtable 1</action>
+        </step>
+        <step>
+            <state>On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a lettuce 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1.</state>
+            <analysis>Now I find a lettuce (1). Next, I need to take it.</analysis>
+            <action>take lettuce 1 from diningtable 1</action>
+        </step>
+        <step>
+            <state>You pick up the lettuce 1 from the diningtable 1.</state>
+            <analysis>Now I have the lettuce. The task is to put a *clean* lettuce on the dining table. So I need to clean it first. I will go to the sinkbasin to clean it.</analysis>
+            <action>go to sinkbasin 1</action>
+        </step>
+        <step>
+            <state>On the sinkbasin 1, you see a apple 2, a ladle 2, a spoon 1, and a tomato 3.</state>
+            <analysis>I am at the sink. I need to clean the lettuce.</analysis>
+            <action>clean lettuce 1 with sinkbasin 1</action>
+        </step>
+        <step>
+            <state>You clean the lettuce 1 using the sinkbasin 1.</state>
+            <analysis>Now I have a clean lettuce. I need to put it on the diningtable.</analysis>
+            <action>go to diningtable 1</action>
+        </step>
+        <step>
+            <state>On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1.</state>
+            <analysis>I am at the diningtable with the clean lettuce. I will now place the lettuce on the table to complete the task.</analysis>
+            <action>move lettuce 1 to diningtable 1</action>
+        </step>
+      user_assistant_format: |
+
+        For example, User will provide instruction,current state as below:
+        "User Input:[User Query and State]" 
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        User: Your task is to: put a clean lettuce in diningtable. <state>You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1.</state>
+        Assistant: <{think_tag}>To solve the task, I need to find and take a lettuce, then clean it with sinkbasin, then put it in diningtable. First I need to find a lettuce. A lettuce is more likely to appear in fridge (1), diningtable (1), sinkbasin (1), stoveburner (1-3), cabinet (1-13). I can check one by one, starting with fridge 1.</{think_tag}>
+        <action>go to fridge 1</action>
+
+        User: <state>The fridge 1 is closed.</state>
+        Assistant: <{think_tag}>The fridge is closed, I need to open it to see what's inside.</{think_tag}>
+        <action>open fridge 1</action>
+
+        User: <state>You open the fridge 1. The fridge 1 is open. In it, you see a cup 3, a egg 2, a potato 3, and a potato 2.</state>
+        Assistant: <{think_tag}>There is no lettuce in the fridge. I should check another location. I will check the diningtable.</{think_tag}>
+        <action>go to diningtable 1</action>
+
+        User: <state>On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a lettuce 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1.</state>
+        Assistant: <{think_tag}>Now I find a lettuce (1). Next, I need to take it.</{think_tag}>
+        <action>take lettuce 1 from diningtable 1</action>
+
+        User: <state>You pick up the lettuce 1 from the diningtable 1.</state>
+        Assistant: <{think_tag}>Now I have the lettuce. The task is to put a *clean* lettuce on the dining table. So I need to clean it first. I will go to the sinkbasin to clean it.</{think_tag}>
+        <action>go to sinkbasin 1</action>
+
+        User: <state>You clean the lettuce 1 using the sinkbasin 1.</state>
+        Assistant: <{think_tag}>Now I have a clean lettuce. I need to put it on the diningtable.</{think_tag}>
+        <action>go to diningtable 1</action>
+
+        User: <state>On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1.</state>
+        Assistant: <{think_tag}>I am at the diningtable with the clean lettuce. I will now place the lettuce on the table to complete the task.</{think_tag}>
+        <action>move lettuce 1 to diningtable 1</action>
+      user_assistant_format_part: |
+        You only have recent part of the history with window size {history_window_size}.
+        For example, User will provide instruction,current state as below:
+        "User Input:[User Query and State]" 
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        User: Your task is to: put a clean lettuce in diningtable. <state>You are in the middle of a room. Looking quickly around you, you see a cabinet 13, a cabinet 12, a cabinet 11, a cabinet 10, a cabinet 9, a cabinet 8, a cabinet 7, a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 1, a diningtable 1, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1.</state>
+        Assistant: <{think_tag}>To solve the task, I need to find and take a lettuce, then clean it with sinkbasin, then put it in diningtable. First I need to find a lettuce. A lettuce is more likely to appear in fridge (1), diningtable (1), sinkbasin (1), stoveburner (1-3), cabinet (1-13). I can check one by one, starting with fridge 1.</{think_tag}>
+        <action>go to fridge 1</action>
+
+        User: <state>The fridge 1 is closed.</state>
+        Assistant: <{think_tag}>The fridge is closed, I need to open it to see what's inside.</{think_tag}>
+        <action>open fridge 1</action>
+
+        User: <state>You open the fridge 1. The fridge 1 is open. In it, you see a cup 3, a egg 2, a potato 3, and a potato 2.</state>
+        Assistant: <{think_tag}>There is no lettuce in the fridge. I should check another location. I will check the diningtable.</{think_tag}>
+        <action>go to diningtable 1</action>
+
+        User: <state>On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a lettuce 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1.</state>
+        Assistant: <{think_tag}>Now I find a lettuce (1). Next, I need to take it.</{think_tag}>
+        <action>take lettuce 1 from diningtable 1</action>
+
+        User: <state>You pick up the lettuce 1 from the diningtable 1.</state>
+        Assistant: <{think_tag}>Now I have the lettuce. The task is to put a *clean* lettuce on the dining table. So I need to clean it first. I will go to the sinkbasin to clean it.</{think_tag}>
+        <action>go to sinkbasin 1</action>
+
+        User: <state>You clean the lettuce 1 using the sinkbasin 1.</state>
+        Assistant: <{think_tag}>Now I have a clean lettuce. I need to put it on the diningtable.</{think_tag}>
+        <action>go to diningtable 1</action>
+
+        User: <state>On the diningtable 1, you see a apple 1, a bread 1, a butterknife 2, a cup 2, a fork 2, a knife 2, a knife 1, a ladle 1, a mug 2, a mug 1, a pan 2, a peppershaker 1, a spatula 3, a tomato 2, and a tomato 1.</state>
+        Assistant: <{think_tag}>I am at the diningtable with the clean lettuce. I will now place the lettuce on the table to complete the task.</{think_tag}>
+        <action>move lettuce 1 to diningtable 1</action>
+    zeroshot_example:
+      user_assistant_format: |
+
+        Please use your knowledge about alfworld and solve this task. You can not receive a feedback from the environment. You should guess where the target object is and output all your action to finish the task. Use move rather put. 
+        For each object, it has a number. For example, apple 1 and apple 2, you should also give your target a number.
+        For example, User will provide instruction,current state as below:
+        "User Input:[User Query and State]" 
+        You will interact with the environment step by step to fulfill the user's request.
+        If doesn't offer environment state, you can just reason based on the instruction.
+        And you should follow the format below to respond:
+        <{think_tag}>Your reasoning process</{think_tag}>
+        <action>Your action</action> 
+  
+  blocksworld:
+    system_prompt: |
+        # Role
+        You are a robot in a blocksworld system. The blocksworld system has a set of blocks that can be stacked on top of each other, an arm that can hold one block at a time, and a table where blocks can be placed.
+
+        # Task Requirements
+        - Your goal is to move the blocks from the Initial State to the goal state using four actions: pickup, putdown, stack, and unstack.
+        - A block is considered clear when there is no block on top of it.
+        - You can **hold only one block at a time**, this is important.
+        - The table can be used to place blocks.
+
+        # Action Rules
+        - **pickup**: You can pick up a block on the table if it is clear and the arm is empty. You cannot pick up a block that is on top of another block. After the pickup action, the arm will be holding the block, and the block will no longer be on the table or clear.
+        - **putdown**: You can put down a block on the table if the arm is holding a block. You cannot put down a block on top of another block. After the putdown action, the arm will be empty, and the block will be on the table and clear.
+        - **stack**: You can stack a block on top of another block if the arm is holding the top block and the bottom block is clear. You cannot stack a block on the table. After the stack action, the arm will be empty, the top block will be on top of the bottom block, and the bottom block will no longer be clear.
+        - **unstack**: You can unstack a block from on top of another block if the arm is empty and the top block is clear. You cannot unstack a block that is on the table. After the unstack action, the arm will be holding the top block, the top block will no longer be on top of the bottom block, and the bottom block will be clear. If block 1 is on top of block 2 and you want to move block 1, use unstack rather than pickup.  If block 1 is on the table and you want to move block 1, use pickup rather than unstack.
+
+        # Output Requirements
+        - You need to think step by step.
+        - If you want to do action, output your action between <action> and </action> tags, 
+        For example:
+        1. To pick up block b1: <action>pickup b1</action>, if b1 is on the table and clear and your hand is empty. 
+        2. To put down block b1: <action>putdown b1</action>, if b1 is in your hand.
+        3. To stack block b1 on top of block b2: <action>stack b1 b2</action>,if b1 is in your hand and b2 is clear.
+        4. To unstack block b1 from block b2: <action>unstack b1 b2</action>, if b1 is on top of b2 and b1 is clear and your hand is empty.
+        - Use the "<{think_tag}> </{think_tag}>" to reason about which actions to take next.
+        - You need to complete the task within {max_steps} steps.
+        - Output <action>stop</action> when you have reached the target or cannot move anymore.
+    fewshot_example:
+      default_format: |
+
+        For example, User will provide a query and instruction as below:
+        "User: [User Query and Instruction]"
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        Assistant: 
+        <step>
+            <state>I have 3 blocks. b3 is on b2. b1 is on the table. b2 is on the table. b1 is clear. b3 is clear. My hand is empty.</state>
+            <analysis>The goal is to have b2 in my hand, while b1 and b2 are on the table and clear. Since b1 and b2 are currently on the table and clear, I can start by unstacking b3 from b2. This will allow me to hold it and then putdown it.</analysis>
+            <action>unstack b3 b2</action>
+        </step>
+        <step>
+            <state>I have 3 blocks. b1 is on the table. b2 is on the table. b1 is clear. b2 is clear. I am holding b3.</state>
+            <analysis>Now that I am holding b3, I can put it down on the table to free up my hand. This will allow me to pickup b2 next.</analysis>
+            <action>putdown b3</action>
+        </step>
+        <step>
+            <state>I have 3 blocks. b1 is on the table. b2 is on the table. b3 is on the table. b1 is clear. b2 is clear. b3 is clear. My hand is empty.</state>
+            <analysis>Now that I have put down b3, I can pickup b2 since it is clear and on the table.</analysis>
+            <action>pickup b2</action>
+        </step>
+
+      user_assistant_format: |
+
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state>I have 3 blocks. b3 is on b2. b1 is on the table. b2 is on the table. b1 is clear. b3 is clear. My hand is empty.</state>
+        Assistant: <{think_tag}>The goal is to have b2 in my hand, while b1 and b2 are on the table and clear. Since b1 and b2 are currently on the table and clear, I can start by unstacking b3 from b2. This will allow me to hold it and then putdown it.</{think_tag}>
+        <action> unstack b3 b2</action>
+
+        User: <state>I have 3 blocks. b1 is on the table. b2 is on the table. b1 is clear. b2 is clear. I am holding b3.</state>
+        Assistant: <{think_tag}>Now that I am holding b3, I can put it down on the table to free up my hand. This will allow me to pickup b2 next.</{think_tag}>
+        <action> putdown b3</action>
+
+        User: <state>I have 3 blocks. b1 is on the table. b2 is on the table. b3 is on the table. b1 is clear. b2 is clear. b3 is clear. My hand is empty.</state>
+        Assistant: <{think_tag}>Now that I have put down b3, I can pickup b2 since it is clear and on the table.</{think_tag}>
+        <action> pickup b2</action>
+
+      user_assistant_format_part: |
+        You only have recent part of the history with window size {history_window_size}.
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state>I have 3 blocks. b3 is on b2. b1 is on the table. b2 is on the table. b1 is clear. b3 is clear. My hand is empty.</state>
+        Assistant: <{think_tag}>The goal is to have b2 in my hand, while b1 and b2 are on the table and clear. Since b1 and b2 are currently on the table and clear, I can start by unstacking b3 from b2. This will allow me to hold it and then putdown it.</{think_tag}>
+        <action> unstack b3 b2</action>
+
+        User: <state>I have 3 blocks. b1 is on the table. b2 is on the table. b1 is clear. b2 is clear. I am holding b3.</state>
+        Assistant: <{think_tag}>Now that I am holding b3, I can put it down on the table to free up my hand. This will allow me to pickup b2 next.</{think_tag}>
+        <action> putdown b3</action>
+
+        User: <state>I have 3 blocks. b1 is on the table. b2 is on the table. b3 is on the table. b1 is clear. b2 is clear. b3 is clear. My hand is empty.</state>
+        Assistant: <{think_tag}>Now that I have put down b3, I can pickup b2 since it is clear and on the table.</{think_tag}>
+        <action> pickup b2</action>
+  
+  frozen_lake:
+    system_prompt: |
+      You are solving the FrozenLake puzzle.
+      Forbid the hole and go to the target.
+      You have four actions: Up, Down, Left, Right.
+      The meaning of each symbol in the state is:
+      O: wall, _: empty, G: target, P: player.
+      You should first analyse based on the state and then output the next action.
+      After each action, you may receive a state description about the new state. Please use the state description to generate the next action.
+      You need to complete the task within {max_steps} steps.
+      You need to think step by step.
+      Use the "<{think_tag}> </{think_tag}>" to reason about which actions to take next, and the "<action> </action>" to specify your actions.
+      Output <action>stop</action> when you have reached the target or cannot move anymore.
+    fewshot_example:
+      default_format: |
+
+        For example, User will provide a query and instruction as below:
+        "User: [User Query and Instruction]"
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        Assistant: 
+        <step>
+            <state>
+            _O__
+            O___
+            _G__
+            __P_
+            </state>
+            <analysis>To forbid the hole and go to the target, I should firstly go up.</analysis>
+            <action>Up</action>
+        </step>
+        <step>
+            <state>
+            _O__
+            O___
+            _GP_
+            ____
+            </state>
+            <analysis>To go from (2,2) to the target, I should go left.</analysis>
+            <action>Left</action>
+        </step>
+
+      user_assistant_format: |
+      
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state>
+        _O__
+        O___
+        _G__
+        __P_
+        </state>
+        Assistant: <{think_tag}>To forbid the hole and go to the target, I should firstly go up.</{think_tag}>
+        <action>Up</action>
+
+        User: <state>
+        _O__
+        O___
+        _GP_
+        ____
+        </state>
+        Assistant: <{think_tag}>To go from (2,2) to the target, I should go left.</{think_tag}>
+        <action>Left</action>
+
+      user_assistant_format_part: |
+        You only have recent part of the history with window size {history_window_size}.
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state>
+        _O__
+        O___
+        _G__
+        __P_
+        </state>
+        Assistant: <{think_tag}>To forbid the hole and go to the target, I should firstly go up.</{think_tag}>
+        <action>Up</action>
+
+        User: <state>
+        _O__
+        O___
+        _GP_
+        ____
+        </state>
+        Assistant: <{think_tag}>To go from (2,2) to the target, I should go left.</{think_tag}>
+        <action>Left</action>
+
+  sodoku:
+    system_prompt: |
+      You are solving a Sodoku puzzle.
+      Fill in the empty cells (marked with _) with numbers 1-{sodoku_grid_size} such that:
+      1. Each row contains all numbers 1-{sodoku_grid_size} exactly once
+      2. Each column contains all numbers 1-{sodoku_grid_size} exactly once
+      3. Each {sodoku_size}x{sodoku_size} subgrid contains all numbers 1-{sodoku_grid_size} exactly once
+      4. The grid is 0-indexed (i.e., the top-left cell is (0,0), the bottom-right cell is ({sodoku_grid_size_minus_1},{sodoku_grid_size_minus_1}))
+      You need to complete the task within {max_steps} steps.
+      You need to think step by step.
+      Use the "<{think_tag}> </{think_tag}>" to reason about which actions to take next, and the "<action> </action>" to specify your actions.
+      Output <action>stop</action> when you have reached the target or cannot move anymore.
+    fewshot_example:
+      default_format: |
+
+        For example, User will provide a query and instruction as below:
+        "User: [User Query and Instruction]"
+        You will interact with the environment step by step to fulfill the user's request.
+        And you should follow the format below to respond:
+        Assistant: 
+        <step>
+          <state>
+          1_34
+          3412
+          2143
+          432_
+          </state>
+          <analysis>I need to fill position (0,1). Looking at row 0, column 1, and the top-left 2x2 subgrid, the only valid number is 2.</analysis>
+        <action>0 1 2</action>
+        </step>
+        <step>
+          <state>
+          1234
+          3412
+          2143
+          432_
+          </state>
+          <analysis>I should fill the last empty position (3,3), the only valid number is 1.</analysis>
+          <action>3 3 1</action>
+        </step>
+
+      user_assistant_format: |
+      
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state>
+        1_34
+        3412
+        2143
+        432_
+        </state>
+        Assistant: <{think_tag}>I need to fill position (0,1). Looking at row 0, column 1, and the top-left 2x2 subgrid, the only valid number is 2.</{think_tag}>
+        <action>0 1 2</action>
+
+        User: <state>
+        1234
+        3412
+        2143
+        432_
+        </state>
+        Assistant: <{think_tag}>I should fill the last empty position (3,3), the only valid number is 1.</{think_tag}>
+        <action>3 3 1</action>
+
+      user_assistant_format_part: |
+        You only have recent part of the history with window size {history_window_size}.
+        Example Interaction is as below, you should follow the Assistant format to respond,use <{think_tag}> </{think_tag}> for reasoning and <action> </action> for action:
+        User: [User Query and Instruction] <state>
+        1_34
+        3412
+        2143
+        432_
+        </state>
+        Assistant: <{think_tag}>I need to fill position (0,1). Looking at row 0, column 1, and the top-left 2x2 subgrid, the only valid number is 2.</{think_tag}>
+        <action>0 1 2</action>
+
+        User: <state>
+        1234
+        3412
+        2143
+        432_
+        </state>
+        Assistant: <{think_tag}>I should fill the last empty position (3,3), the only valid number is 1.</{think_tag}>
+        <action>3 3 1</action>

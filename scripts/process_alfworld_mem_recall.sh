@@ -1,0 +1,1 @@
+python -m utils.analysis_files.alfworld_mem_recall --rewrite False

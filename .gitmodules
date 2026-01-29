@@ -1,0 +1,3 @@
+[submodule "external/webshop-minimal"]
+	path = external/webshop-minimal
+	url = https://github.com/ZihanWang314/webshop-minimal.git

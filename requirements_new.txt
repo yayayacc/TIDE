@@ -1,0 +1,17 @@
+IPython
+matplotlib
+gym
+gym_sokoban
+peft
+accelerate
+codetiming
+datasets
+dill
+hydra-core
+numpy
+pandas
+wandb
+gymnasium
+gymnasium[toy-text]
+alfworld
+vllm==0.12.0

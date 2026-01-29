@@ -1,0 +1,67 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - prompt
+  - api_config
+  - api_key
+# General settings
+task: blocksworld
+out_dir: ./res
+file_name_prefix: test_agent
+data_path: data/blocksworld/100_1_10.json
+
+# agent_proxy settings from base.yaml are overridden here
+agent_proxy:
+  type: vllm # vllm or client
+  state: env # no, env, empty, internal
+  chat_format: default_format # default_format, user_assistant_format
+  prompt_example: fewshot
+  trajectory_rollout_n: 8
+  step_rollout_n: 1
+  max_steps: 15
+  stop_on_error: False
+  enable_thinking: True
+  history_has_cot: True
+  history_window_size: 0
+  offer_feedback: True
+  dp_size: 1
+  batch_size: 4
+  max_step_len: 4096
+  max_model_len: 40960
+  temperature: 0.7
+  top_p: 1.0
+  stop: "</step>"
+  safety_margin: 100
+# vllm_agent settings
+vllm_agent:
+  model_path: /models/Qwen3-4b
+  aim_gpus: "0"
+  tp_size: 1
+  pp_size: 1
+  max_logprobs: 30
+  max_gpu_mem_util: 0.9
+  use_vllm_tqdm: False
+  include_stop_str_in_output: True
+  enforce_eager: False
+
+# client_agent settings
+client_agent:
+  model_name: qwen-plus
+  model_series: qwen # qwen, minimax, hunyuan, deepseek
+
+# Environment specific settings
+env:
+  alfworld:
+    eval_mode: eval_in_distribution # eval_in_distribution, eval_out_of_distribution
+    data_path: ./data/alfworld
+  webshop:
+    eval_mode: small # small, full
+
+additional_exp:
+  random_step:
+    enable: false
+    num: 1
+  stop_by_self:
+    enable: false
+          
