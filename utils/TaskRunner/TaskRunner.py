@@ -198,6 +198,7 @@ class TaskRunnerBase:
 
     def run(self, dp_idx=0, lock=None) -> None:
         batch = []
+        self.dp_idx = dp_idx
         for data_idx, data in enumerate(self.dataset):
             if data_idx % 10 == 0:
                 print(
@@ -233,13 +234,6 @@ class TaskRunnerBase:
                     lock=lock,
                 )
 
-
-    def run_episode_batch(
-        self,
-        batch: List[dict],
-    ) -> List[Dict[str, Any]]:
-
-        return self._run_stepwise_episode_batch(batch)
 
     def _run_stepwise_episode(self, data) -> Dict[str, Any]:
         """Stepwise reasoning mode: use environment feedback for multi-step reasoning"""
@@ -387,7 +381,7 @@ class TaskRunnerBase:
             valid_trajectories = active_trajectories
         return valid_trajectories
 
-    def _run_stepwise_episode_batch(self, batch: List[dict]):
+    def run_episode_batch(self, batch: List[dict]):
         # 1. initialize trajectories
         trajectories: List[TrajectoryInfo] = []
         print(f"Initializing {len(batch) * self.traj_rollout_n} trajectories...")
@@ -444,6 +438,8 @@ class TaskRunnerBase:
 
     def _run_batch_stepwise_rollout(self, trajectories: List[TrajectoryInfo]) -> List[Dict[str, Any]]:
         for step_idx in range(self.max_steps):
+            if step_idx % 5 == 0:
+                print(f"DP{self.dp_idx}: Starting step {step_idx} for all active trajectories...")
             active_trajectories = [
                 traj for traj in trajectories if not traj.done
             ]

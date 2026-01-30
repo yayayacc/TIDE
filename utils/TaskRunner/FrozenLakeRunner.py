@@ -201,66 +201,11 @@ class FrozenLakeRunner(TaskRunner):
             ),
             steps=[],
         )
-
-    def _run_stepwise_episode_batch(self, batch: List[dict]):
-        # 1. initialize trajectories
-        trajectories: List[TrajectoryInfo] = []
-        print(
-            f"Initializing {len(batch) * self.traj_rollout_n} trajectories..."
-        )
-        with ThreadPoolExecutor(max_workers=64) as executor:
-            futures = []
-            for i, data in enumerate(batch):
-                for traj_idx in range(self.traj_rollout_n):
-                    futures.append(
-                        executor.submit(
-                            self._initialize_trajectory,
-                            data_idx=i,
-                            data=data,
-                            traj_rollout_idx=traj_idx,
-                        )
-                    )
-            for future in futures:
-                trajectories.append(future.result())
-        print("All trajectories initialized.")
-        # 2. Loop through steps until all trajectories are done
-        batch_results = self._run_batch_stepwise_rollout(trajectories)
-
-        final_results = []
-        for i, data in enumerate(batch):
-            trajs = [traj for traj in trajectories if traj.idx_in_batch == i]
-            traj = trajs[0]
-            all_rollouts = batch_results[i]
-            all_accuracies = [
-                1 if r["rollout_results"]["success"] else 0
-                for r in all_rollouts
-            ]
-            avg_accuracy = (
-                sum(all_accuracies) / len(all_accuracies)
-                if all_accuracies
-                else 0.0
-            )
-            pass_at_n = any(all_accuracies)
-
-            final_results.append(
-                {
-                    "query": traj.ctx_manager.instruction_prompt,
-                    "seed": data["seed"],
-                    "all_accuracies": all_accuracies,
-                    "avg_accuracy": avg_accuracy,
-                    "pass_at_n": pass_at_n,
-                    "traj_rollouts": all_rollouts,
-                    "meta": {
-                        "traj_rollout_n": self.traj_rollout_n,
-                        "step_rollout_n": self.step_rollout_n,
-                    },
-                }
-            )
-
-        return final_results
-    
+    # Rewrite _run_batch_stepwise_rollout, because need not to release env back to pool
     def _run_batch_stepwise_rollout(self, trajectories: List[TrajectoryInfo]) -> List[Dict[str, Any]]:
         for step_idx in range(self.max_steps):
+            if step_idx % 5 == 0:
+                print(f"DP{self.dp_idx}: Starting step {step_idx} for all active trajectories...")
             active_trajectories = [
                 traj for traj in trajectories if not traj.done
             ]
