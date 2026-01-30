@@ -29,7 +29,19 @@ Please refer to the script files in the `scripts` directory to run evaluations i
 Notes:
 1. For the Mistral-3-14B-Instruct model with vllm == 0.12.0, you need to set `export ENFORCE_EAGER=True` and `export MAX_LOGPROBS=0`
 2. When running in the WebShop environment, DP can only be set to 1
-
+#### Run Remote models
+You need to create an yaml file with your API keys at `config/api_key.yaml`.
+Example:
+```yaml
+api_config:
+  deepseek:
+    base_url: "<api_url>"
+    api_key: "<api_key>"
+  gemini:
+    base_url: "<api_url>"
+    api_key: "<api_key>"
+```
+You can set different key for different remote model providers.
 ### Analysis of Results
 Analyze the trajectories of the experiments and generate the output json files
 ```bash
