@@ -4,6 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+start_end_mapping = {
+    "blocksworld": (0, 20),
+    "frozen_lake": (0, 30),
+    "sudoku": (0, 20),
+    "alfworld": (0, 60),
+    "webshop": (0, 15)
+}
 
 def format_criteria_for_title(selection_criteria: dict = None) -> str:
     """
@@ -246,53 +253,6 @@ def plot_metric_bar(
     plt.show()
 
     return fig, ax
-
-
-def load_right_data(data: list[dict[dict[str, any]]]) -> pd.DataFrame:
-    records = []
-    for i, sample in enumerate(data):
-        # get first right trajectory
-        selected_rollout = sample["traj_rollouts"][0]["rollout_results"]
-        for rollout in sample["traj_rollouts"]:
-            if rollout["rollout_results"]["success"] == True:
-                selected_rollout = rollout["rollout_results"]
-                break
-        general_loop_log = selected_rollout["loop"]["general_loop_log"]
-        specific_loop_log = selected_rollout["loop"]["specific_loop_log"]
-        specific_loop_steps = [item["step"] for item in specific_loop_log]
-        for step_idx, step in enumerate(selected_rollout["steps"]):
-
-            record = {
-                "sample_idx": i,
-                "query": sample.get("query"),
-                "success": selected_rollout.get("success"),
-                "avg_accuracy": sample.get("avg_accuracy"),
-                "step_idx": step_idx,
-                "analysis": step.get("analysis", None),
-                "action": step.get("action"),
-                "analysis_token_entropy": step["token_entropy_stats"]
-                .get("analysis_stats", {})
-                .get("raw", None),
-                "analysis_avg_entropy": step["token_entropy_stats"]
-                .get("analysis_stats", {})
-                .get("mean", None),
-                "action_token_entropy": step["token_entropy_stats"]
-                .get("action_stats", {})
-                .get("raw", None),
-                "action_avg_entropy": step["token_entropy_stats"]
-                .get("action_stats", {})
-                .get("mean", None),
-                "action_space_entropy": step.get("action_space_entropy"),
-                # "general_loop": True if step_idx in general_loop_log else False,
-                "specific_loop": (
-                    True if step_idx in specific_loop_steps else False
-                ),
-                # "action_executability": step.get("action_executability", None),
-            }
-            records.append(record)
-
-    df = pd.DataFrame(records)
-    return df
 
 
 def load_all_data(data: list[dict[dict[str, any]]]) -> pd.DataFrame:

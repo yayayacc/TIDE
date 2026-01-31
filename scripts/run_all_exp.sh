@@ -8,7 +8,7 @@ export DP=2
 export MODEL_DIR="<path_to_your_model>/Llama-3.1-8B"
 bash ./scripts/blocksworld/run_exp.sh
 bash ./scripts/frozen_lake/run_exp.sh
-bash ./scripts/sodoku/run_exp.sh
+bash ./scripts/sudoku/run_exp.sh
 bash ./scripts/alfworld/run_exp.sh
 bash ./scripts/webshop/run_exp.sh
 
@@ -19,6 +19,6 @@ export TP=2
 export MODEL_DIR="<path_to_your_model>/Llama-3.3-70B"
 bash ./scripts/blocksworld/run_exp.sh
 bash ./scripts/frozen_lake/run_exp.sh
-bash ./scripts/sodoku/run_exp.sh
+bash ./scripts/sudoku/run_exp.sh
 bash ./scripts/alfworld/run_exp.sh
 bash ./scripts/webshop/run_exp.sh

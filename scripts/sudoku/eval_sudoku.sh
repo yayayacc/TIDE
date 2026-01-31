@@ -1,3 +1,3 @@
-export TASK="sodoku"
+export TASK="sudoku"
 
 bash scripts/base.sh

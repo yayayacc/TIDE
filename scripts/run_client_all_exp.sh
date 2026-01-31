@@ -7,6 +7,6 @@ export STEP_ROLLOUT_N=1
 
 bash ./scripts/blocksworld/run_client.sh
 bash ./scripts/frozen_lake/run_client.sh
-bash ./scripts/sodoku/run_client.sh
+bash ./scripts/sudoku/run_client.sh
 bash ./scripts/alfworld/run_client.sh
 bash ./scripts/webshop/run_client.sh

@@ -9,17 +9,17 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(current_dir))
 sys.path.insert(0, project_root)
 
-from ragen.env.sodoku.config import SodokuEnvConfig
-from ragen.env.sodoku.env import SodokuEnv
+from ragen.env.sudoku.config import SudokuEnvConfig
+from ragen.env.sudoku.env import SudokuEnv
 
 
-class SodokuDataGenerator:
+class SudokuDataGenerator:
     def __init__(self):
         self.generated_envs: Set[str] = set()
         
     def generate_environments(self, min_level: int, max_level: int, num_attempts: int, grid_size: int=3) -> List[Tuple[int, int]]:
         """
-        Generate non-duplicate Sodoku environment data
+        Generate non-duplicate Sudoku environment data
         
         Args:
             min_level: Minimum difficulty level (remove_num), range 1-3
@@ -47,7 +47,7 @@ class SodokuDataGenerator:
             
             # Create environment
             try:
-                env = SodokuEnv(config=SodokuEnvConfig(grid_size=grid_size, seed=seed, remove_num=level))
+                env = SudokuEnv(config=SudokuEnvConfig(grid_size=grid_size, seed=seed, remove_num=level))
                 state = env.reset(seed=seed)
                 
                 # Use environment's string representation to check for duplicates
@@ -70,7 +70,7 @@ class SodokuDataGenerator:
         print(f"Generation complete! Successfully generated {len(generated_data)} non-duplicate environments")
         return generated_data
     
-    def save_data(self, data: List[Tuple[int, int]], min_level: int, max_level: int, grid_size:int , output_dir: str = "data/sodoku"):
+    def save_data(self, data: List[Tuple[int, int]], min_level: int, max_level: int, grid_size:int , output_dir: str = "data/sudoku"):
         """
         Save generated data to JSON file
         
@@ -107,9 +107,9 @@ class SodokuDataGenerator:
 
 def main():
     """Main function for interactive parameter input"""
-    generator = SodokuDataGenerator()
+    generator = SudokuDataGenerator()
     
-    print("=== Sodoku Environment Data Generator ===")
+    print("=== Sudoku Environment Data Generator ===")
     
     # Get user input
     try:

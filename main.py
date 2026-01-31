@@ -76,10 +76,10 @@ def get_task_runner(
         from utils.TaskRunner.BlocksWorldRunner import BlocksWorldRunner
 
         return BlocksWorldRunner(config, agent, dataset)
-    elif config.task == "sodoku":
-        from utils.TaskRunner.SodokuRunner import SodokuRunner
+    elif config.task == "sudoku":
+        from utils.TaskRunner.SudokuRunner import SudokuRunner
 
-        return SodokuRunner(config, agent, dataset)
+        return SudokuRunner(config, agent, dataset)
     else:
         raise ValueError(f"Unknown task name: {config.task}")
 

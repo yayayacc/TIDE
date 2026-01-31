@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 
 @dataclass
-class SodokuEnvConfig:
+class SudokuEnvConfig:
     """Sudoku environment configuration class"""
     
     # Grid size (3x3, 4x4, 5x5, etc.)

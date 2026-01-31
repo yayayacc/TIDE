@@ -10,8 +10,8 @@ from .frozen_lake.config import FrozenLakeEnvConfig
 from .frozen_lake.env import FrozenLakeEnv
 from .metamathqa.env import MetaMathQAEnv
 from .metamathqa.config import MetaMathQAEnvConfig
-from .sodoku.config import SodokuEnvConfig
-from .sodoku.env import SodokuEnv
+from .sudoku.config import SudokuEnvConfig
+from .sudoku.env import SudokuEnv
 
 
 REGISTERED_ENVS = {
@@ -21,7 +21,7 @@ REGISTERED_ENVS = {
     'frozen_lake': FrozenLakeEnv,
     # 'alfworld': AlfredTXTEnv,
     'metamathqa': MetaMathQAEnv,
-    'sodoku': SodokuEnv,
+    'sudoku': SudokuEnv,
 }
 
 REGISTERED_ENV_CONFIGS = {
@@ -31,7 +31,7 @@ REGISTERED_ENV_CONFIGS = {
     'frozen_lake': FrozenLakeEnvConfig,
     # 'alfworld': AlfredEnvConfig,
     'metamathqa': MetaMathQAEnvConfig,
-    'sodoku': SodokuEnvConfig,
+    'sudoku': SudokuEnvConfig,
 }
 
 try:

@@ -440,14 +440,14 @@ prompt:
         Assistant: <{think_tag}>To go from (2,2) to the target, I should go left.</{think_tag}>
         <action>Left</action>
 
-  sodoku:
+  sudoku:
     system_prompt: |
-      You are solving a Sodoku puzzle.
-      Fill in the empty cells (marked with _) with numbers 1-{sodoku_grid_size} such that:
-      1. Each row contains all numbers 1-{sodoku_grid_size} exactly once
-      2. Each column contains all numbers 1-{sodoku_grid_size} exactly once
-      3. Each {sodoku_size}x{sodoku_size} subgrid contains all numbers 1-{sodoku_grid_size} exactly once
-      4. The grid is 0-indexed (i.e., the top-left cell is (0,0), the bottom-right cell is ({sodoku_grid_size_minus_1},{sodoku_grid_size_minus_1}))
+      You are solving a Sudoku puzzle.
+      Fill in the empty cells (marked with _) with numbers 1-{sudoku_grid_size} such that:
+      1. Each row contains all numbers 1-{sudoku_grid_size} exactly once
+      2. Each column contains all numbers 1-{sudoku_grid_size} exactly once
+      3. Each {sudoku_size}x{sudoku_size} subgrid contains all numbers 1-{sudoku_grid_size} exactly once
+      4. The grid is 0-indexed (i.e., the top-left cell is (0,0), the bottom-right cell is ({sudoku_grid_size_minus_1},{sudoku_grid_size_minus_1}))
       You need to complete the task within {max_steps} steps.
       You need to think step by step.
       Use the "<{think_tag}> </{think_tag}>" to reason about which actions to take next, and the "<action> </action>" to specify your actions.

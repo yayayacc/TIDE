@@ -4,8 +4,8 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from ragen.env.sodoku.config import SodokuEnvConfig
-from ragen.env.sodoku.env import SodokuEnv
+from ragen.env.sudoku.config import SudokuEnvConfig
+from ragen.env.sudoku.env import SudokuEnv
 from utils.TaskRunner.TaskRunner import TaskRunnerBase as TaskRunner
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -16,7 +16,7 @@ from utils.TaskRunner.TaskRunner import TrajectoryInfo
 
 
 
-class SodokuRunner(TaskRunner):
+class SudokuRunner(TaskRunner):
     def __init__(
         self, config, agent: BaseAgent, dataset: List[Dict[str, Any]] = None
     ) -> None:
@@ -52,7 +52,7 @@ class SodokuRunner(TaskRunner):
                 if char == "_":
                     empty_positions.append((i, j))
 
-        # description = f"This is a {n}x{n} Sodoku puzzle. "
+        # description = f"This is a {n}x{n} Sudoku puzzle. "
 
         if len(empty_positions) == 1:
             description = f"There is one empty cell. The empty cell is at ({empty_positions[0][0]}, {empty_positions[0][1]}). "
@@ -136,8 +136,8 @@ class SodokuRunner(TaskRunner):
     ) -> TrajectoryInfo:
         """Parallelly initialize environment and context for a single trajectory."""
         with self.init_lock:
-            env = SodokuEnv(
-                config=SodokuEnvConfig(
+            env = SudokuEnv(
+                config=SudokuEnvConfig(
                     grid_size=data["grid_size"],
                     seed=data["seed"],
                     remove_num=data["level"],
@@ -151,16 +151,16 @@ class SodokuRunner(TaskRunner):
             think_tag=self.think_tag,
             history_window_size=self.config.agent_proxy.history_window_size,
         )
-        sodoku_size = data["grid_size"]
-        sodoku_grid_size = sodoku_size * sodoku_size
-        sodoku_grid_size_minus_1 = sodoku_grid_size - 1
+        sudoku_size = data["grid_size"]
+        sudoku_grid_size = sudoku_size * sudoku_size
+        sudoku_grid_size_minus_1 = sudoku_grid_size - 1
         system_prompt = (
             task_prompts.system_prompt.format(
                 think_tag=self.think_tag,
                 max_steps=self.max_steps,
-                sodoku_size=sodoku_size,
-                sodoku_grid_size=sodoku_grid_size,
-                sodoku_grid_size_minus_1=sodoku_grid_size_minus_1,
+                sudoku_size=sudoku_size,
+                sudoku_grid_size=sudoku_grid_size,
+                sudoku_grid_size_minus_1=sudoku_grid_size_minus_1,
             )
             + fewshot
         )

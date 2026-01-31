@@ -25,7 +25,7 @@ def is_valid_move(grid: np.ndarray, row: int, col: int, value: int) -> bool:
     return True
 
 
-def solve_sodoku(grid: np.ndarray) -> Optional[np.ndarray]:
+def solve_sudoku(grid: np.ndarray) -> Optional[np.ndarray]:
     """Solve sudoku using backtracking algorithm"""
     grid_size = int(np.sqrt(len(grid)))
     
@@ -49,7 +49,7 @@ def solve_sodoku(grid: np.ndarray) -> Optional[np.ndarray]:
     return None
 
 
-def generate_sodoku_puzzle(grid_size: int = 3, seed: int = 42, remove_num: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
+def generate_sudoku_puzzle(grid_size: int = 3, seed: int = 42, remove_num: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
     """Generate a solvable sudoku puzzle
 
     Args:
@@ -102,7 +102,7 @@ def _generate_complete_solution(n: int) -> np.ndarray:
         return True
 
     if not backtrack():
-        raise RuntimeError("Failed to generate a complete Sodoku solution")
+        raise RuntimeError("Failed to generate a complete Sudoku solution")
 
     return grid
 
@@ -120,7 +120,7 @@ def fill_subgrid(grid: np.ndarray, start_row: int, start_col: int):
             idx += 1
 
 
-def is_sodoku_complete(grid: np.ndarray) -> bool:
+def is_sudoku_complete(grid: np.ndarray) -> bool:
     """Check if sudoku is complete and correct"""
     grid_size = int(np.sqrt(len(grid)))
     n = grid_size * grid_size

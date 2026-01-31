@@ -5,15 +5,15 @@ import os
 from typing import List, Any
 
 # If relative import fails, try absolute import
-from ragen.env.sodoku.utils import generate_sodoku_puzzle, is_valid_move, is_sodoku_complete, grid_to_string
+from ragen.env.sudoku.utils import generate_sudoku_puzzle, is_valid_move, is_sudoku_complete, grid_to_string
 from ragen.env.base import BaseDiscreteActionEnv
-from ragen.env.sodoku.config import SodokuEnvConfig
+from ragen.env.sudoku.config import SudokuEnvConfig
 from ragen.utils import all_seed
 
 
-class SodokuEnv(BaseDiscreteActionEnv):
+class SudokuEnv(BaseDiscreteActionEnv):
     def __init__(self, config=None, **kwargs):
-        self.config = config or SodokuEnvConfig()
+        self.config = config or SudokuEnvConfig()
         self.grid_size = self.config.grid_size
         self.n = self.grid_size * self.grid_size
         self.max_steps = self.config.max_steps
@@ -41,7 +41,7 @@ class SodokuEnv(BaseDiscreteActionEnv):
         """Reset environment"""
         try:
             with all_seed(seed):
-                self.puzzle, self.solution = generate_sodoku_puzzle(
+                self.puzzle, self.solution = generate_sudoku_puzzle(
                     grid_size=self.grid_size,
                     seed=seed or self.config.seed,
                     remove_num=self.config.remove_num
@@ -106,7 +106,7 @@ class SodokuEnv(BaseDiscreteActionEnv):
         self.current_grid[row, col] = value
 
         # Check if complete
-        is_complete = is_sodoku_complete(self.current_grid)
+        is_complete = is_sudoku_complete(self.current_grid)
 
         # Calculate reward
         # reward = self._calculate_reward(row, col, value, is_complete)
@@ -287,8 +287,8 @@ if __name__ == '__main__':
     print(f"Final remove count: {remove_num} / {total_cells}")
     print()
     
-    config = SodokuEnvConfig(grid_size=grid_size, seed=5797, remove_num=remove_num)
-    env = SodokuEnv(config)
+    config = SudokuEnvConfig(grid_size=grid_size, seed=5797, remove_num=remove_num)
+    env = SudokuEnv(config)
     
     print("=== Sudoku Game ===")
     print("Game rules:")
