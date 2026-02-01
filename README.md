@@ -23,13 +23,13 @@ export ALFWORLD_DATA="./data/alfworld"
 alfworld-download
 ```
 
-### Run Evaluations
+## Run Evaluations
 Please refer to the script files in the `scripts` directory to run evaluations in different environments.
 
 Notes:
 1. For the Mistral-3-14B-Instruct model with vllm == 0.12.0, you need to set `export ENFORCE_EAGER=True` and `export MAX_LOGPROBS=0`
 2. When running in the WebShop environment, DP can only be set to 1
-#### Run Remote models
+### Run Remote models
 You need to create an yaml file with your API keys at `config/api_key.yaml`.
 Example:
 ```yaml
@@ -51,69 +51,11 @@ Analyze memory recall of alfworld experiments
 ```bash
 bash scripts/process_alfworld_mem_recall.sh
 ```
+If you meet the error of `module 'numpy' has no attribute 'trapz'`,you can try to downgrade numpy to version 2.2.6
 
-## Output Data Format
-```python
+## Citation
+If you find TIDE useful in your research, please consider citing the following paper:
 
-result: Dict[str, Any] = {
-    "query": str,
-    "all_accuracies": List[int],
-    "avg_accuracy": float,
-    "pass_at_k": float,
-    "traj_rollouts": [
-        {
-            "rollout_idx": int,
-            "rollout_results": rollout_trajectory
-        },
-        # ... more rollouts
-    ]
-}
-
-rollout_trajectory: Dict[str, Any] = {
-    "query": str ,
-    "success": bool ,
-    "loop": [
-        {
-            "step": int,
-            "action": str,
-        },
-        ...
-    ],
-    "steps": [
-        {
-            "last_step_feedback": {
-                "is_valid": bool,
-                "message": str
-            },
-            "model_input": str,
-            "response": str,
-            "observation": str,
-            "input_state": str,
-            "true_state": str,
-            "analysis": str,
-            "action": str,
-            "tokens": List[str],
-            "token_ids": List[int],
-            "action_space_entropy": float,
-
-            "token_entropy_stats": {
-                "analysis_stats": {
-                    "mean": float,
-                    "std": float,
-                    "max": float,
-                    "min": float,
-                    "raw": List[float]
-                },
-                "action_stats": dict[str, float]
-                },
-            "env_feedback":{
-                "action_is_valid": bool,
-                "accuracy": int,
-                "level": str,
-                "done": bool
-            }
-        },
-        ...
-    ]
-}
+```
+wait for paper publication
 ```

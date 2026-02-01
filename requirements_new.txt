@@ -14,4 +14,7 @@ wandb
 gymnasium
 gymnasium[toy-text]
 alfworld
+orjson
+seaborn
+omegaconf
 vllm==0.12.0

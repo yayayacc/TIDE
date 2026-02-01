@@ -3,14 +3,21 @@ from typing import Any, Dict, List
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+import argparse
+import os
+import json
+import multiprocessing as mp
+from multiprocessing.pool import ThreadPool
+from omegaconf import OmegaConf
+import orjson
 start_end_mapping = {
     "blocksworld": (0, 20),
     "frozen_lake": (0, 30),
     "sudoku": (0, 20),
     "alfworld": (0, 60),
-    "webshop": (0, 15)
+    "webshop": (0, 15),
 }
+
 
 def format_criteria_for_title(selection_criteria: dict = None) -> str:
     """
@@ -333,7 +340,9 @@ def identify_error_atomic_actions(group):
     n = len(obs_list)
 
     # Initialize markers
-    is_error_atomic = [False] * n  # Whether it is the starting point of an error atomic action
+    is_error_atomic = [
+        False
+    ] * n  # Whether it is the starting point of an error atomic action
     is_looped = [False] * n  # Whether this error atomic action is looped
     error_atomic_id = [-1] * n  # Mark which error atomic action it belongs to
     is_repeating = [False] * n  # Mark whether it is a repeating step (new)
@@ -381,7 +390,9 @@ def identify_error_atomic_actions(group):
                 next_act = act_list[cycle_end : cycle_end + cycle_length]
 
                 if current_obs == next_obs and current_act == next_act:
-                    is_looped[i] = True  # Mark this error atomic action as looped
+                    is_looped[i] = (
+                        True  # Mark this error atomic action as looped
+                    )
                     # Mark repeating parts (newly added)
                     for k in range(cycle_end, cycle_end + cycle_length):
                         is_repeating[k] = True
@@ -402,7 +413,7 @@ def identify_error_atomic_actions(group):
     )
 
 
-def analyze_exp_df(df: pd.DataFrame) -> pd.DataFrame:
+def analyze_exp_df(df: pd.DataFrame, task: str = None) -> pd.DataFrame:
     # cal entropy
     mean_analysis_avg_entropy = (
         df.groupby(["sample_idx", "traj_idx"])["analysis_avg_entropy"]
@@ -658,6 +669,58 @@ def analyze_exp_df(df: pd.DataFrame) -> pd.DataFrame:
     )
     passk_at_T: Dict[int, float] = passk_at_T.to_dict()
 
+    # Calculate AUV metrics based on task
+    passk_auv = None
+    pass1_auv = None
+    pass_k_end = None
+    pass_1_end = None
+
+    if task and task in start_end_mapping:
+        start, end = start_end_mapping[task]
+
+        def extract_series(data_dict, start, end):
+            """Extract values from dict, filling missing values with previous value"""
+            values = []
+            last_value = 0.0
+            for t in range(start, end + 1):
+                key = t  # keys are int in our dict
+                if key in data_dict:
+                    last_value = data_dict[key]
+                values.append(last_value)
+            return values
+
+        def get_value_at_step(data_dict, end):
+            """Get value at specific step, or closest available"""
+            if end in data_dict:
+                return data_dict[end]
+            if not data_dict:
+                return np.nan
+            numeric_keys = sorted(data_dict.keys())
+            lower_keys = [k for k in numeric_keys if k <= end]
+            if lower_keys:
+                return data_dict[lower_keys[-1]]
+            higher_keys = [k for k in numeric_keys if k > end]
+            if higher_keys:
+                return data_dict[higher_keys[0]]
+            return np.nan
+
+        # Calculate pass@k AUV
+        passk_values = extract_series(passk_at_T, start, end)
+        min_passk = min(passk_values) if passk_values else 0
+        adjusted_passk = [v - min_passk for v in passk_values]
+        span = max(end - start, 1)
+        passk_auv = max(np.trapz(adjusted_passk, dx=1), 0.0) / span
+
+        # Calculate pass@1 AUV
+        pass1_values = extract_series(pass1_at_T, start, end)
+        min_pass1 = min(pass1_values) if pass1_values else 0
+        adjusted_pass1 = [v - min_pass1 for v in pass1_values]
+        pass1_auv = max(np.trapz(adjusted_pass1, dx=1), 0.0) / span
+
+        # Get end values
+        pass_k_end = get_value_at_step(passk_at_T, end)
+        pass_1_end = get_value_at_step(pass1_at_T, end)
+
     return {
         "mean_analysis_avg_entropy": mean_analysis_avg_entropy,
         "mean_action_avg_entropy": mean_action_avg_entropy,
@@ -679,6 +742,11 @@ def analyze_exp_df(df: pd.DataFrame) -> pd.DataFrame:
         "success_by_loop_ratio": success_by_loop_ratio,
         "pass1_at_T": pass1_at_T,
         "passk_at_T": passk_at_T,
+        # New AUV metrics
+        "passk_auv": passk_auv,
+        "pass1_auv": pass1_auv,
+        "pass_k_end": pass_k_end,
+        "pass_1_end": pass_1_end,
     }
 
 
@@ -726,75 +794,61 @@ def get_config(exp_dir: str) -> Dict[str, Any]:
     }
     return config_data
 
+def process_line(line):
+    if not line.strip():
+        return None
+    return orjson.loads(line)
+
+def load_jsonl_parallel(data_path, n_workers=64):
+    with open(data_path, "rb") as f:
+        lines = f.readlines()
+    # Use thread pool for IO-intensive and CPU-intensive tasks that release GIL
+    with ThreadPool(n_workers) as pool:
+        data = [x for x in pool.map(process_line, lines) if x is not None]
+    return data
+
+def process_experiment_folder(exp_dir, rewrite):
+    try:
+        print(f"Starting processing: {exp_dir}")
+        result_path = os.path.join(exp_dir, "result.json")
+
+        if not rewrite and os.path.exists(result_path):
+            print(f"Skipping (result.json already exists): {exp_dir}")
+            return
+
+        # Find jsonl files
+        jsonl_files = [
+            f for f in os.listdir(exp_dir) if f.endswith(".jsonl")
+        ]
+        if not jsonl_files:
+            print(f"Warning: No .jsonl file found in {exp_dir}")
+            return
+        jsonl_path = os.path.join(exp_dir, jsonl_files[0])
+
+        # Load and analyze data
+        raw_data = load_jsonl_parallel(jsonl_path)
+        df = load_all_data(raw_data)
+
+        # Extract configuration information first to get task
+        config_data = get_config(exp_dir)
+        task = config_data.get("task")
+
+        # Analyze with task parameter
+        analysis_results = analyze_exp_df(df, task=task)
+
+        # Merge results and save
+        final_result = {**config_data, **analysis_results}
+        with open(result_path, "w", encoding="utf-8") as f:
+            json.dump(final_result, f, ensure_ascii=False, indent=4)
+
+        print(f"Successfully saved result.json to: {exp_dir}")
+
+    except Exception as e:
+        print(f"Error processing {exp_dir}: {e}")
+
 
 if __name__ == "__main__":
-    import argparse
-    import os
-    import json
-    import multiprocessing as mp
-    from multiprocessing.pool import ThreadPool
-    from omegaconf import OmegaConf
-    import orjson
-    import shutil
 
-    def process_line(line):
-        if not line.strip():
-            return None
-        return orjson.loads(line)
-
-    def load_jsonl_parallel(data_path, n_workers=64):
-        with open(data_path, "rb") as f:
-            lines = f.readlines()
-        # Use thread pool for IO-intensive and CPU-intensive tasks that release GIL
-        with ThreadPool(n_workers) as pool:
-            data = [x for x in pool.map(process_line, lines) if x is not None]
-        return data
-
-    def process_experiment_folder(exp_dir, rewrite):
-        try:
-            print(f"Starting processing: {exp_dir}")
-            result_path = os.path.join(exp_dir, "result.json")
-
-            if not rewrite and os.path.exists(result_path):
-                print(f"Skipping (result.json already exists): {exp_dir}")
-                return
-
-            # Find jsonl files
-            jsonl_files = [
-                f for f in os.listdir(exp_dir) if f.endswith(".jsonl")
-            ]
-            if not jsonl_files:
-                print(f"Warning: No .jsonl file found in {exp_dir}")
-                # shutil.rmtree(exp_dir)
-                # print(f"Deleted folder: {exp_dir}")
-                return
-            jsonl_path = os.path.join(exp_dir, jsonl_files[0])
-
-            # Load and analyze data
-            raw_data = load_jsonl_parallel(jsonl_path)
-            df = load_all_data(raw_data)
-            analysis_results = analyze_exp_df(df)
-
-            # Read config.yaml
-            config_path = os.path.join(exp_dir, "config.yaml")
-            if not os.path.exists(config_path):
-                print(f"Warning: config.yaml not found in {exp_dir}")
-                return
-
-            config = OmegaConf.load(config_path)
-
-            # Extract configuration information
-            config_data = get_config(exp_dir)
-
-            # Merge results and save
-            final_result = {**config_data, **analysis_results}
-            with open(result_path, "w", encoding="utf-8") as f:
-                json.dump(final_result, f, ensure_ascii=False, indent=4)
-
-            print(f"Successfully saved result.json to: {exp_dir}")
-
-        except Exception as e:
-            print(f"Error processing {exp_dir}: {e}")
 
     parser = argparse.ArgumentParser(description="Analyze experiment data")
     parser.add_argument(
