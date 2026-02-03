@@ -1,6 +1,13 @@
 
 # TIDE: Trajectory-based Diagnostic Evaluation of Test-Time Improvement in LLM Agents
 
+<p align="center">
+  <!-- <a href=""><b>[🌐 PyPi Package]</b></a> • -->
+  <a href="https://arxiv.org/pdf/2602.02196"><b>[📜 Paper]</b></a> •
+  <a href="https://github.com/yayayacc/TIDE/"><b>[🐱 GitHub]</b></a>
+  
+</p>
+
 ## Setup TIDE
 First, create and activate a new conda environment
 ```bash
@@ -60,5 +67,10 @@ The implementation of our code should be thankful to excellent projects [RAGEN](
 If you find TIDE useful in your research, please consider citing the following paper:
 
 ```
-wait for paper publication
+@article{yan2025tide,
+  title={TIDE: Trajectory-based Diagnostic Evaluation of Test-Time Improvement in LLM Agents},
+  author={Hang Yan, Xinyu Che, Fangzhi Xu, Qiushi Sun, Zichen Ding, Kanzhi Cheng, Jian Zhang, Tao Qin, Jun Liu, Qika Lin},
+  journal={arXiv preprint arXiv:2602.02196},
+  year={2025}
+}
 ```
