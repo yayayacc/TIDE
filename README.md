@@ -53,6 +53,9 @@ bash scripts/process_alfworld_mem_recall.sh
 ```
 If you meet the error of `module 'numpy' has no attribute 'trapz'`,you can try to downgrade numpy to version 2.2.6
 
+## Thanks
+The implementation of our code should be thankful to excellent projects [RAGEN](https://github.com/mll-lab-nu/RAGEN) and [SimpleTIR](https://github.com/ltzheng/SimpleTIR/tree/main).
+
 ## Citation
 If you find TIDE useful in your research, please consider citing the following paper:
 
